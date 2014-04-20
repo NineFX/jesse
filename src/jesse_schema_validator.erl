@@ -50,7 +50,7 @@
 -define(MAXLENGTH,            <<"maxLength">>).
 -define(ENUM,                 <<"enum">>).
 -define(FORMAT,               <<"format">>).               % NOT IMPLEMENTED YET
--define(DIVISIBLEBY,          <<"divisibleBy">>).
+-define(MULTIPLEOF,           <<"multipleOf">>).
 -define(DISALLOW,             <<"disallow">>).
 -define(EXTENDS,              <<"extends">>).
 -define(ID,                   <<"id">>).
@@ -80,7 +80,7 @@
 -define(not_allowed,                 'not_allowed').
 -define(not_unique,                  'not_unique').
 -define(not_in_range,                'not_in_range').
--define(not_divisible,               'not_divisible').
+-define(not_multiple,                'not_multiple').
 -define(wrong_type,                  'wrong_type').
 -define(wrong_type_items,            'wrong_type_items').
 -define(wrong_type_dependency,       'wrong_type_dependency').
@@ -302,9 +302,9 @@ check_value(Value, [{?ENUM, Enum} | Attrs], State) ->
 check_value(Value, [{?FORMAT, Format} | Attrs], State) ->
   NewState = check_format(Value, Format, State),
   check_value(Value, Attrs, NewState);
-check_value(Value, [{?DIVISIBLEBY, DivisibleBy} | Attrs], State) ->
+check_value(Value, [{?MULTIPLEOF, MultipleOf} | Attrs], State) ->
   NewState = case is_number(Value) of
-               true  -> check_divisible_by(Value, DivisibleBy, State);
+               true  -> check_multiple_of(Value, MultipleOf, State);
                false -> State
              end,
   check_value(Value, Attrs, NewState);
@@ -938,15 +938,15 @@ check_format(_Value, _Format, State) ->
 %% divisible by with no remainder (the result of the division must be an
 %% integer.)  The value of this attribute SHOULD NOT be 0.
 %% @private
-check_divisible_by(Value, 0, State) ->
-  handle_data_invalid(?not_divisible, Value, State);
-check_divisible_by(Value, DivisibleBy, State) ->
+check_multiple_of(Value, 0, State) ->
+  handle_data_invalid(?not_multiple, Value, State);
+check_multiple_of(Value, DivisibleBy, State) ->
   Result = (Value / DivisibleBy - trunc(Value / DivisibleBy)) * DivisibleBy,
   case Result of
     0.0 ->
       State;
     _   ->
-      handle_data_invalid(?not_divisible, Value, State)
+      handle_data_invalid(?not_multiple, Value, State)
   end.
 
 %% @doc 5.25.  disallow

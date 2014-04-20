@@ -51,9 +51,15 @@
                         , Data   :: json_term()
                         }.
 
+-type schema_version() :: { 'draft4' 
+                          | 'draft4_hyper'
+                          | 'draft3'
+                          | 'draft3_hyper'}.
+
 -type error_type() :: {'missing_id_field', Field :: binary()}
                     | {'missing_required_property', Name :: binary()}
                     | {'missing_dependency', Name :: binary()}
+                    | {'invalid_schema_reference', JSONReference :: binary()}
                     | 'no_match'
                     | 'no_extra_properties_allowed'
                     | 'no_extra_items_allowed'
@@ -68,6 +74,14 @@
                     | 'wrong_size'
                     | 'wrong_length'
                     | 'wrong_format'.
+
+-define(SCHEMA_VERSION, <<"$schema">>).
+-define(CURRENT, <<"http://json-schema.org/schema#">>).
+-define(CURRENT_HYPER, <<"http://json-schema.org/hyper-schema#">>).
+-define(DRAFT4, <<"http://json-schema.org/draft-04/schema#">>).
+-define(DRAFT4_HYPER, <<"http://json-schema.org/draft-04/hyper-schema#">>).
+-define(DRAFT3, <<"http://json-schema.org/draft-03/schema#">>).
+-define(DRAFT3_HYPER, <<"http://json-schema.org/draft-03/hyper-schema#">>).
 
 %%% API
 %% @doc Adds a schema definition `Schema' to in-memory storage associated with
@@ -218,6 +232,31 @@ try_parse(Type, ParserFun, JsonBin) ->
         schema -> throw({schema_error, {parse_error, Error}})
       end
   end.
+
+%% @private
+-spec get_schema_version(json_term()) -> schema_version() | error().
+get_schema_version([{?SCHEMA_VERSION, ?CURRENT} | _]) ->
+  draft4;
+get_schema_version([{?SCHEMA_VERSION, ?CURRENT_HYPER} | _]) ->
+  draft4_hyper;
+get_schema_version([{?SCHEMA_VERSION, ?DRAFT4} | _]) ->
+  draft4;
+get_schema_version([{?SCHEMA_VERSION, ?DRAFT4_HYPER} | _]) ->
+  draft4_hyper;
+get_schema_version([{?SCHEMA_VERSION, ?DRAFT3} | _]) ->
+  draft3;
+get_schema_version([{?SCHEMA_VERSION, ?DRAFT3_HYPER} | _]) ->
+  draft3_hyper;
+get_schema_version([{?SCHEMA_VERSION, JSONReference} | Rest]) ->
+  { error,
+    [
+      { schema_invalid,
+      [{?SCHEMA_VERSION, JSONReference} | Rest],
+      {invalid_schema_reference, JSONReference}
+    ]
+  };
+get_schema_version(_) ->
+  draft4.
 
 %%% Local Variables:
 %%% erlang-indent-level: 2
